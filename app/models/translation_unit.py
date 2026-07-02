@@ -10,6 +10,9 @@ class UnitType(StrEnum):
     HEADING = "heading"
     TABLE_CELL = "table_cell"
     LIST_ITEM = "list_item"
+    QUOTE = "quote"
+    CODE_BLOCK = "code_block"
+    CAPTION = "caption"
 
 @dataclass(slots=True)
 class TranslationUnit:

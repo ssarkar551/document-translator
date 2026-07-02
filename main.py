@@ -40,7 +40,14 @@ async def build_docx(units: list[dict], language: str = "en") -> FileResponse:
         output_path = Path(temp_file.name)
 
     built_path = build_docx_from_units(translation_units, output_path)
-    return FileResponse(path=built_path, filename="built.docx", media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    if not isinstance(built_path, Path):
+        raise TypeError("Expected builder to return a file path")
+
+    return FileResponse(
+        path=built_path,
+        filename="built.docx",
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
 
 
 def main() -> None:

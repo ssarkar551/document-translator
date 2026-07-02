@@ -1,10 +1,23 @@
 from __future__ import annotations
 
-from typing import Any
-
 from docx import Document
 
 from app.models.translation_unit import TranslationUnit, UnitType
+
+
+def _classify_paragraph_type(paragraph: object, paragraph_index: int) -> tuple[UnitType, str]:
+    style_name = (getattr(paragraph, "style", None).name or "").lower()
+    if style_name.startswith("heading"):
+        return UnitType.HEADING, f"h{paragraph_index}"
+    if "list" in style_name:
+        return UnitType.LIST_ITEM, f"li{paragraph_index}"
+    if "quote" in style_name:
+        return UnitType.QUOTE, f"q{paragraph_index}"
+    if "code" in style_name:
+        return UnitType.CODE_BLOCK, f"code{paragraph_index}"
+    if "caption" in style_name:
+        return UnitType.CAPTION, f"cap{paragraph_index}"
+    return UnitType.PARAGRAPH, f"p{paragraph_index}"
 
 
 def extract_translation_units_from_docx(file_path: str, language: str = "en") -> list[TranslationUnit]:
@@ -17,18 +30,21 @@ def extract_translation_units_from_docx(file_path: str, language: str = "en") ->
         if not text:
             continue
 
+        unit_type, unit_id = _classify_paragraph_type(paragraph, paragraph_index)
         units.append(
             TranslationUnit(
-                id=f"p{paragraph_index}",
+                id=unit_id,
                 text=text,
-                type=UnitType.PARAGRAPH,
+                type=unit_type,
                 location={"paragraph_index": paragraph_index},
                 document_type="docx",
-                formatting={"preserve_whitespace": True},
+                formatting={
+                    "preserve_whitespace": True,
+                    "style_name": getattr(paragraph.style, "name", None),
+                },
                 metadata={"language": language, "char_count": len(text)},
             )
         )
-        paragraph_index += 1
 
     for table_index, table in enumerate(document.tables):
         for row_index, row in enumerate(table.rows):
